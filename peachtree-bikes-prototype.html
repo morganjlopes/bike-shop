@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peachtree Bikes - Sales Platform Prototype</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Icons as simple SVG components
+    const Icon = ({ name, size = 20, className = '' }) => {
+      const icons = {
+        search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+        plus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+        chevronRight: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>,
+        chevronDown: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>,
+        chevronUp: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m18 15-6-6-6 6"/></svg>,
+        moon: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
+        sun: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>,
+        menu: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>,
+        settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+        bike: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>,
+        barChart: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>,
+        package: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>,
+        store: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>,
+        users: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+        fileText: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>,
+        check: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>,
+        checkCircle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+        circle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/></svg>,
+        x: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+        edit: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>,
+        trash: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
+        eye: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>,
+        eyeOff: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>,
+        mic: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>,
+        rotateCcw: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>,
+        shoppingCart: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>,
+        activity: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+        dollarSign: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+        trendingUp: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
+        info: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>,
+        share: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>,
+        mapPin: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>,
+        moreHorizontal: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>,
+        calendar: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
+        filter: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+        layoutGrid: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>,
+        list: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>,
+      };
+      return icons[name] || null;
+    };
+
+    // Mock Data
+    const mockDeals = [
+      { id: 'D-1046', customer: 'Maya Patel', email: 'maya.patel@example.com', phone: '+1 (415) 555-0127', budget: '$2,800-$4,500', stage: 'bike-finder', amount: 3200, tags: ['Gravel', 'Test ride'], updated: 'Today', note: 'Returning rider • Wants gravel + commute', inStore: true },
+      { id: 'D-1047', customer: 'Ethan Brooks', email: 'ethan.b@example.com', phone: '+1 (415) 555-0198', budget: '$5,000-$8,000', stage: 'test-ride', amount: 6900, tags: ['MTB', 'Suspension'], updated: 'Today', note: 'Experienced rider • Trail focus' },
+      { id: 'D-1044', customer: 'Noah Martin', email: 'noah.m@example.com', phone: '+1 (415) 555-0156', budget: '$4,000-$6,000', stage: 'recommendation', amount: 5600, tags: ['eBike', 'Accessories'], updated: 'Yesterday', note: 'New to cycling • Commute priority' },
+      { id: 'D-1048', customer: 'Jordan Kim', email: 'jordan.k@example.com', phone: '+1 (415) 555-0134', budget: '$3,500-$5,000', stage: 'recommendation', amount: 4100, tags: ['Gravel', 'Quote'], updated: '1d ago', note: 'Weekend adventurer' },
+      { id: 'D-1045', customer: 'Sophia Reyes', email: 'sophia.r@example.com', phone: '+1 (415) 555-0112', budget: '$4,000-$5,500', stage: 'closed', amount: 4800, tags: ['Commuter', 'Delivered'], updated: '3d ago', note: 'Urban commuter • Delivered' },
+    ];
+
+    const mockProducts = [
+      { id: 'P-001', name: 'Gravel Explorer Pro', category: 'Gravel', price: 3200, terrain: ['Gravel', 'Road'], sizes: ['S', 'M', 'L', 'XL'], ebike: false, stock: 12 },
+      { id: 'P-002', name: 'TrailBlazer 29er', category: 'MTB', price: 4500, terrain: ['Trail', 'Mountain'], sizes: ['S', 'M', 'L'], ebike: false, stock: 8 },
+      { id: 'P-003', name: 'City Commuter Elite', category: 'Commuter', price: 1800, terrain: ['Urban', 'Road'], sizes: ['S', 'M', 'L', 'XL'], ebike: false, stock: 15 },
+      { id: 'P-004', name: 'E-Cruise 500', category: 'eBike', price: 4200, terrain: ['Urban', 'Trail'], sizes: ['M', 'L', 'XL'], ebike: true, stock: 6 },
+    ];
+
+    const mockStores = [
+      { id: 'S-001', name: 'Peachtree Bikes - Downtown', location: 'Atlanta, GA', manager: 'Sarah Chen', associates: 5, activeDeals: 12 },
+      { id: 'S-002', name: 'Peachtree Bikes - Buckhead', location: 'Atlanta, GA', manager: 'Mike Johnson', associates: 4, activeDeals: 8 },
+      { id: 'S-003', name: 'Peachtree Bikes - Decatur', location: 'Decatur, GA', manager: 'Lisa Park', associates: 3, activeDeals: 6 },
+    ];
+
+    const mockUsers = [
+      { id: 'U-001', name: 'Sarah Chen', email: 'sarah@peachtreebikes.com', role: 'Store Manager', store: 'Downtown', status: 'Active' },
+      { id: 'U-002', name: 'Mike Johnson', email: 'mike@peachtreebikes.com', role: 'Store Manager', store: 'Buckhead', status: 'Active' },
+      { id: 'U-003', name: 'Alex Rivera', email: 'alex@peachtreebikes.com', role: 'Sales Associate', store: 'Downtown', status: 'Active' },
+    ];
+
+    const bikeFinderQuestions = [
+      { id: 'riding-type', question: 'What type of riding do you plan to do most often?', hint: "If they're unsure, ask: what do your best days on a bike look like?", options: ['MTB', 'Road', 'Gravel', 'Fitness/Commute'] },
+      { id: 'terrain', question: 'Where will you ride most often?', hint: 'Pick the terrain that matches their most common route.', options: ['Paved roads', 'Mixed surfaces', 'Trails', 'Urban'] },
+      { id: 'goal', question: "What's the main goal?", hint: 'This helps pick the right geometry + component focus.', options: ['Fitness', 'Commuting', 'Recreation', 'Competition'] },
+      { id: 'ebike', question: 'Do you want an eBike?', hint: "If they're unsure, frame it as 'assist vs no-assist'.", options: ['Yes', 'No', 'Open to it'] },
+      { id: 'budget', question: 'Budget tier', hint: "We'll match spec level to their expectations.", options: ['Under $2,000', '$2,000-$4,000', '$4,000-$6,000', '$6,000+'] },
+    ];
+
+    const accessories = [
+      { id: 'A-001', name: 'Premium Helmet', price: 180, category: 'Safety' },
+      { id: 'A-002', name: 'Clip-in Pedals', price: 150, category: 'Components' },
+      { id: 'A-003', name: 'Rear Rack', price: 85, category: 'Cargo' },
+      { id: 'A-004', name: 'Fenders Set', price: 65, category: 'Protection' },
+      { id: 'A-005', name: 'Bike Computer', price: 250, category: 'Electronics' },
+      { id: 'A-006', name: 'Water Bottle Kit', price: 45, category: 'Hydration' },
+    ];
+
+    // Shared Components
+    const Badge = ({ children, variant = 'default', size = 'sm' }) => {
+      const variants = {
+        default: 'bg-gray-100 text-gray-700',
+        primary: 'bg-blue-100 text-blue-700',
+        success: 'bg-green-100 text-green-700',
+        warning: 'bg-yellow-100 text-yellow-700',
+        info: 'bg-blue-50 text-blue-600',
+      };
+      const sizes = { sm: 'px-2 py-0.5 text-xs', md: 'px-3 py-1 text-sm' };
+      return <span className={`inline-flex items-center rounded-full font-medium ${variants[variant]} ${sizes[size]}`}>{children}</span>;
+    };
+
+    const Button = ({ children, variant = 'primary', size = 'md', icon, onClick, className = '', disabled = false }) => {
+      const variants = {
+        primary: 'bg-blue-500 hover:bg-blue-600 text-white',
+        secondary: 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300',
+        ghost: 'hover:bg-gray-100 text-gray-600',
+      };
+      const sizes = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-sm', lg: 'px-6 py-3 text-base' };
+      return (
+        <button onClick={onClick} disabled={disabled} className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors ${variants[variant]} ${sizes[size]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}>
+          {icon && <Icon name={icon} size={16} />}
+          {children}
+        </button>
+      );
+    };
+
+    const Card = ({ children, className = '', onClick }) => (
+      <div onClick={onClick} className={`bg-white rounded-xl border border-gray-200 shadow-sm ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''} ${className}`}>
+        {children}
+      </div>
+    );
+
+    const Input = ({ placeholder, value, onChange, icon, className = '' }) => (
+      <div className={`relative ${className}`}>
+        {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Icon name={icon} size={18} /></span>}
+        <input type="text" placeholder={placeholder} value={value} onChange={onChange} className={`w-full rounded-lg border border-gray-300 bg-white py-2 ${icon ? 'pl-10' : 'pl-4'} pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`} />
+      </div>
+    );
+
+    const Select = ({ value, onChange, options, placeholder, className = '' }) => (
+      <select value={value} onChange={onChange} className={`rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none ${className}`}>
+        {placeholder && <option value="">{placeholder}</option>}
+        {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+      </select>
+    );
+
+    const ProgressBar = ({ progress, className = '' }) => (
+      <div className={`h-1 bg-gray-200 rounded-full overflow-hidden ${className}`}>
+        <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${progress}%` }} />
+      </div>
+    );
+
+    const Avatar = ({ name, size = 'md' }) => {
+      const sizes = { sm: 'w-8 h-8 text-xs', md: 'w-10 h-10 text-sm', lg: 'w-12 h-12 text-base' };
+      const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2);
+      return <div className={`${sizes[size]} rounded-full bg-blue-100 text-blue-700 font-medium flex items-center justify-center`}>{initials}</div>;
+    };
+
+    const Modal = ({ isOpen, onClose, title, children }) => {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h2 className="text-lg font-semibold">{title}</h2>
+              <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><Icon name="x" size={20} /></button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-8rem)]">{children}</div>
+          </div>
+        </div>
+      );
+    };
+
+    const Tabs = ({ tabs, activeTab, onChange }) => (
+      <div className="flex border-b border-gray-200">
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => onChange(tab.id)} className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    );
+
+    // Header Component
+    const Header = ({ title, subtitle, darkMode, setDarkMode, userType, onUserTypeChange }) => (
+      <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+            <Icon name="bike" size={24} className="text-gray-700" />
+          </div>
+          <div>
+            <h1 className="font-semibold text-gray-900">{title}</h1>
+            <p className="text-xs text-gray-500">{subtitle}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Select value={userType} onChange={(e) => onUserTypeChange(e.target.value)} options={[
+            { value: 'admin', label: 'Admin View' },
+            { value: 'store', label: 'In-Store View' },
+            { value: 'customer', label: 'Customer View' },
+          ]} className="text-sm" />
+          <button onClick={() => setDarkMode(!darkMode)} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+            <Icon name={darkMode ? 'sun' : 'moon'} size={16} />
+            <span className="text-sm">{darkMode ? 'Light' : 'Dark'}</span>
+          </button>
+          <button className="p-2 rounded-lg hover:bg-gray-100"><Icon name="settings" size={20} className="text-gray-500" /></button>
+          <button className="p-2 rounded-lg hover:bg-gray-100"><Icon name="menu" size={20} className="text-gray-500" /></button>
+        </div>
+      </header>
+    );
+
+    // ============ ADMIN VIEW ============
+    const AdminSidebar = ({ activeSection, setActiveSection }) => {
+      const sections = [
+        { id: 'dashboard', label: 'Dashboard', icon: 'barChart' },
+        { id: 'catalog', label: 'Product Catalog', icon: 'package' },
+        { id: 'stores', label: 'Stores', icon: 'store' },
+        { id: 'users', label: 'Users & Roles', icon: 'users' },
+        { id: 'deals', label: 'All Deals', icon: 'fileText' },
+      ];
+      return (
+        <aside className="w-64 bg-gray-50 border-r border-gray-200 min-h-screen p-4">
+          <nav className="space-y-1">
+            {sections.map(section => (
+              <button key={section.id} onClick={() => setActiveSection(section.id)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeSection === section.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                <Icon name={section.icon} size={18} />
+                {section.label}
+              </button>
+            ))}
+          </nav>
+        </aside>
+      );
+    };
+
+    const AdminDashboard = () => {
+      const stats = [
+        { label: 'Total Deals', value: '156', change: '+12%', icon: 'fileText' },
+        { label: 'Revenue (MTD)', value: '$284,500', change: '+8%', icon: 'dollarSign' },
+        { label: 'Active Stores', value: '3', change: '0%', icon: 'store' },
+        { label: 'Close Rate', value: '68%', change: '+5%', icon: 'trendingUp' },
+      ];
+      const stages = [
+        { stage: 'Bike Finder', count: 24, pct: 15 },
+        { stage: 'Test Ride', count: 18, pct: 12 },
+        { stage: 'Recommendation', count: 31, pct: 20 },
+        { stage: 'Review', count: 12, pct: 8 },
+        { stage: 'Closed', count: 71, pct: 46 },
+      ];
+      return (
+        <div className="p-6 space-y-6">
+          <div><h2 className="text-2xl font-semibold text-gray-900">Admin Dashboard</h2><p className="text-gray-500 mt-1">Overview of all stores and sales activity</p></div>
+          <div className="grid grid-cols-4 gap-4">
+            {stats.map(stat => (
+              <Card key={stat.label} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">{stat.label}</p>
+                    <p className="text-2xl font-semibold mt-1">{stat.value}</p>
+                    <p className="text-sm text-green-600 mt-1">{stat.change} vs last month</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-blue-100"><Icon name={stat.icon} size={20} className="text-blue-600" /></div>
+                </div>
+              </Card>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-6">
+            <Card className="p-6">
+              <h3 className="font-semibold mb-4">Deal Stage Distribution</h3>
+              <div className="space-y-3">
+                {stages.map(item => (
+                  <div key={item.stage} className="flex items-center gap-3">
+                    <div className="w-28 text-sm text-gray-600">{item.stage}</div>
+                    <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${item.pct}%` }} />
+                    </div>
+                    <div className="w-8 text-sm text-gray-600 text-right">{item.count}</div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+            <Card className="p-6">
+              <h3 className="font-semibold mb-4">Store Performance</h3>
+              <div className="space-y-4">
+                {mockStores.map(store => (
+                  <div key={store.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                    <div>
+                      <p className="font-medium text-sm">{store.name}</p>
+                      <p className="text-xs text-gray-500">{store.manager} • {store.associates} associates</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{store.activeDeals} deals</p>
+                      <p className="text-xs text-gray-500">Active</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
+      );
+    };
+
+    const AdminCatalog = () => {
+      const [searchTerm, setSearchTerm] = useState('');
+      const [showModal, setShowModal] = useState(false);
+      return (
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div><h2 className="text-2xl font-semibold">Product Catalog</h2><p className="text-gray-500 mt-1">Manage bikes, accessories, and product attributes</p></div>
+            <Button icon="plus" onClick={() => setShowModal(true)}>Add Product</Button>
+          </div>
+          <Card className="p-4">
+            <div className="flex items-center gap-4 mb-4">
+              <Input placeholder="Search products..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} icon="search" className="flex-1" />
+            </div>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Product</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Category</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Price</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Stock</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mockProducts.map(product => (
+                  <tr key={product.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center"><Icon name="bike" size={20} className="text-gray-400" /></div>
+                        <div><p className="font-medium text-sm">{product.name}</p><p className="text-xs text-gray-500">{product.id}</p></div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4"><Badge variant={product.ebike ? 'primary' : 'default'}>{product.category}</Badge></td>
+                    <td className="py-3 px-4 text-sm">${product.price.toLocaleString()}</td>
+                    <td className="py-3 px-4"><span className={`text-sm ${product.stock < 5 ? 'text-red-600' : 'text-green-600'}`}>{product.stock} units</span></td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <button className="p-1 hover:bg-gray-100 rounded"><Icon name="edit" size={16} /></button>
+                        <button className="p-1 hover:bg-gray-100 rounded text-red-500"><Icon name="trash" size={16} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+          <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Add New Product">
+            <div className="space-y-4">
+              <div><label className="block text-sm font-medium mb-1">Product Name</label><Input placeholder="Enter product name" /></div>
+              <div><label className="block text-sm font-medium mb-1">Price</label><Input placeholder="0.00" /></div>
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+                <Button>Save Product</Button>
+              </div>
+            </div>
+          </Modal>
+        </div>
+      );
+    };
+
+    const AdminDeals = ({ onSelectDeal }) => {
+      const stages = [
+        { id: 'bike-finder', label: 'Bike Finder', amount: 3200 },
+        { id: 'test-ride', label: 'Test ride', amount: 6900 },
+        { id: 'recommendation', label: 'Recommendation', amount: 9700 },
+        { id: 'closed', label: 'Closed/Purchased', amount: 4800 },
+      ];
+      return (
+        <div className="p-6 space-y-6">
+          <div><h2 className="text-2xl font-semibold">All Deals</h2><p className="text-gray-500 mt-1">View and manage deals across all stores</p></div>
+          <div className="flex items-center gap-4">
+            <Input placeholder="Search deals by customer, ID, or tag..." icon="search" className="flex-1" />
+            <Button variant="secondary" icon="filter">Filter</Button>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+            {stages.map(stage => {
+              const stageDeals = mockDeals.filter(d => d.stage === stage.id);
+              return (
+                <div key={stage.id} className="flex-shrink-0 w-72">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{stage.label}</span>
+                      <Badge>{stageDeals.length}</Badge>
+                    </div>
+                    <span className="text-sm text-gray-500">${stage.amount.toLocaleString()}</span>
+                  </div>
+                  <div className="space-y-3">
+                    {stageDeals.map(deal => (
+                      <Card key={deal.id} className="p-4" onClick={() => onSelectDeal && onSelectDeal(deal)}>
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="font-medium">{deal.customer}</p>
+                            <p className="text-xs text-gray-500">{deal.id} • Updated {deal.updated}</p>
+                          </div>
+                          <Icon name="chevronRight" size={18} className="text-gray-400" />
+                        </div>
+                        <p className="text-lg font-semibold">${deal.amount.toLocaleString()}</p>
+                        <div className="flex gap-2 mt-3">{deal.tags.map(tag => <Badge key={tag}>{tag}</Badge>)}</div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+    const AdminView = () => {
+      const [activeSection, setActiveSection] = useState('dashboard');
+      const renderContent = () => {
+        switch (activeSection) {
+          case 'dashboard': return <AdminDashboard />;
+          case 'catalog': return <AdminCatalog />;
+          case 'deals': return <AdminDeals />;
+          default: return <AdminDashboard />;
+        }
+      };
+      return (
+        <div className="flex">
+          <AdminSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+          <main className="flex-1 bg-gray-50 min-h-screen">{renderContent()}</main>
+        </div>
+      );
+    };
+
+    // ============ IN-STORE VIEW ============
+    const DealsPipeline = ({ deals, onSelectDeal, onNewDeal }) => {
+      const stages = [
+        { id: 'bike-finder', label: 'Bike Finder', amount: 3200 },
+        { id: 'test-ride', label: 'Test ride', amount: 6900 },
+        { id: 'recommendation', label: 'Recommendation', amount: 9700 },
+        { id: 'closed', label: 'Closed/Purchased', amount: 4800 },
+      ];
+      return (
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-semibold flex items-center gap-2"><Icon name="fileText" size={24} />Deals pipeline</h2>
+              <p className="text-gray-500 mt-1">Side-scroll by stage, filter quickly, and jump into a guided sale workspace.</p>
+            </div>
+            <Button icon="plus" onClick={onNewDeal}>New deal</Button>
+          </div>
+          <div className="flex items-center gap-4 mb-6">
+            <Input placeholder="Search deals by customer, ID, or tag..." icon="search" className="flex-1 max-w-xl" />
+            <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5">
+              <Icon name="filter" size={18} />
+              <span className="text-sm font-medium">Filter</span>
+              <Badge>All</Badge>
+            </div>
+            <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5">
+              <Icon name="layoutGrid" size={18} />
+              <span className="text-sm font-medium">Layout</span>
+              <span className="text-sm text-gray-500">Kanban</span>
+            </div>
+            <span className="text-sm text-gray-500">Showing {deals.length} deals</span>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+            {stages.map(stage => {
+              const stageDeals = deals.filter(d => d.stage === stage.id);
+              return (
+                <div key={stage.id} className="flex-shrink-0 w-72">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">${stage.amount.toLocaleString()}</span>
+                      <span className="font-medium">{stage.label}</span>
+                      <Badge>{stageDeals.length}</Badge>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {stageDeals.map(deal => (
+                      <Card key={deal.id} className="p-4" onClick={() => onSelectDeal(deal)}>
+                        <div className="flex items-start justify-between">
+                          <div><p className="font-semibold">{deal.customer}</p><p className="text-xs text-gray-500">{deal.id} • Updated {deal.updated}</p></div>
+                          <Icon name="chevronRight" size={18} className="text-gray-400" />
+                        </div>
+                        <p className="text-lg font-semibold mt-2">${deal.amount.toLocaleString()}</p>
+                        <div className="flex flex-wrap gap-2 mt-3">{deal.tags.map(tag => <Badge key={tag}>{tag}</Badge>)}</div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+    const DealWorkspace = ({ deal, onBack, isCustomerView, setIsCustomerView }) => {
+      const [activeTab, setActiveTab] = useState('bike-finder');
+      const [answers, setAnswers] = useState({});
+      const [matchCount, setMatchCount] = useState(8);
+      const [selectedBike, setSelectedBike] = useState(null);
+      const [selectedAccessories, setSelectedAccessories] = useState([]);
+
+      const tabs = [
+        { id: 'bike-finder', label: 'Bike Finder' },
+        { id: 'test-ride', label: 'Test ride' },
+        { id: 'recommendations', label: 'Recommendations' },
+        { id: 'review', label: 'Review' },
+      ];
+
+      const flowSteps = [
+        { id: 'bike-finder', label: 'Bike Finder', status: 'in-progress' },
+        { id: 'test-ride', label: 'Test ride + sizing', status: 'todo' },
+        { id: 'recommendations', label: 'Recommendations', status: 'todo' },
+        { id: 'review', label: 'Review', status: 'todo' },
+      ];
+
+      const customerActivity = [
+        { action: 'Viewed recommendations', time: '2m ago' },
+        { action: 'Opened Bike Finder summary', time: '6m ago' },
+        { action: 'Checked pricing', time: '12m ago' },
+        { action: 'Viewed accessories list', time: '18m ago' },
+      ];
+
+      const handleAnswerSelect = (questionId, option) => {
+        const newAnswers = { ...answers, [questionId]: option };
+        setAnswers(newAnswers);
+        setMatchCount(Math.max(1, 8 - Object.keys(newAnswers).length));
+      };
+
+      const renderBikeFinder = () => (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h3 className="text-lg font-semibold flex items-center gap-2"><Icon name="settings" size={18} />Bike Finder</h3>
+              <p className="text-sm text-gray-500">Decision-tree questionnaire that narrows the catalog.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="info">{matchCount} matches</Badge>
+              <Button variant="ghost" size="sm" icon="rotateCcw">Reset</Button>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {bikeFinderQuestions.map((q) => (
+              <Card key={q.id} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium">{q.question}</h4>
+                      <Badge variant={answers[q.id] ? 'success' : 'warning'} size="sm">{answers[q.id] ? 'Answered' : 'Unanswered'}</Badge>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-3">{q.hint}</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {q.options.map(opt => (
+                        <button key={opt} onClick={() => handleAnswerSelect(q.id, opt)} className={`p-3 border rounded-lg text-left text-sm transition-colors ${answers[q.id] === opt ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300'}`}>
+                          <span>{opt}</span>
+                          {answers[q.id] !== opt && <span className="block text-xs text-gray-400 mt-1">Tap to choose</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button className="p-1 hover:bg-gray-100 rounded"><Icon name="chevronDown" size={18} /></button>
+                </div>
+              </Card>
+            ))}
+          </div>
+          <Card className="p-4 bg-gray-50">
+            <p className="text-sm text-gray-600"><strong>Matches update live</strong> — This mockup keeps the questionnaire focused. Results can be surfaced in the sidebar "Bike matches" panel.</p>
+          </Card>
+        </div>
+      );
+
+      const renderTestRide = () => (
+        <div className="space-y-6">
+          <div><h3 className="text-lg font-semibold mb-2">Test Ride & Sizing</h3><p className="text-sm text-gray-500">Capture fit measurements and ride feedback.</p></div>
+          <Card className="p-6">
+            <h4 className="font-medium mb-4">Sizing Checklist</h4>
+            <div className="space-y-3">
+              {['Stand-over height verified', 'Reach comfortable', 'Saddle height set', 'Handlebar position adjusted', 'Brake levers reachable'].map((item, idx) => (
+                <label key={idx} className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-500" />
+                  <span className="text-sm">{item}</span>
+                </label>
+              ))}
+            </div>
+          </Card>
+          <Card className="p-6">
+            <h4 className="font-medium mb-4">Test Ride Feedback</h4>
+            <div className="space-y-4">
+              <div><label className="block text-sm font-medium mb-2">Comfort Rating</label>
+                <div className="flex gap-2">{[1,2,3,4,5].map(n => <button key={n} className="w-10 h-10 border rounded-lg hover:bg-blue-50 hover:border-blue-300 text-sm font-medium">{n}</button>)}</div>
+              </div>
+              <div><label className="block text-sm font-medium mb-2">Notes</label>
+                <textarea placeholder="Any observations about comfort, handling, fit..." className="w-full p-3 border rounded-lg text-sm resize-none h-24" />
+              </div>
+            </div>
+          </Card>
+        </div>
+      );
+
+      const renderRecommendations = () => (
+        <div className="space-y-6">
+          <div><h3 className="text-lg font-semibold mb-2">Recommendations</h3><p className="text-sm text-gray-500">Top bike picks and matching accessories.</p></div>
+          <div>
+            <h4 className="font-medium mb-3">Recommended Bikes</h4>
+            <div className="grid grid-cols-2 gap-4">
+              {mockProducts.slice(0, 4).map(bike => (
+                <Card key={bike.id} className={`p-4 ${selectedBike?.id === bike.id ? 'ring-2 ring-blue-500' : ''}`} onClick={() => setSelectedBike(bike)}>
+                  <div className="w-full h-32 bg-gray-100 rounded-lg mb-3 flex items-center justify-center"><Icon name="bike" size={48} className="text-gray-300" /></div>
+                  <h5 className="font-medium">{bike.name}</h5>
+                  <p className="text-sm text-gray-500">{bike.category}</p>
+                  <p className="text-lg font-semibold mt-2">${bike.price.toLocaleString()}</p>
+                  <div className="flex gap-1 mt-2">{bike.terrain.map(t => <Badge key={t} size="sm">{t}</Badge>)}</div>
+                </Card>
+              ))}
+            </div>
+          </div>
+          {selectedBike && (
+            <div>
+              <h4 className="font-medium mb-3">Recommended Accessories for {selectedBike.name}</h4>
+              <div className="grid grid-cols-3 gap-3">
+                {accessories.map(acc => (
+                  <Card key={acc.id} className={`p-3 ${selectedAccessories.includes(acc.id) ? 'ring-2 ring-blue-500' : ''}`} onClick={() => {
+                    if (selectedAccessories.includes(acc.id)) setSelectedAccessories(selectedAccessories.filter(id => id !== acc.id));
+                    else setSelectedAccessories([...selectedAccessories, acc.id]);
+                  }}>
+                    <div className="flex items-center justify-between">
+                      <div><p className="font-medium text-sm">{acc.name}</p><p className="text-xs text-gray-500">{acc.category}</p></div>
+                      <p className="font-medium">${acc.price}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+
+      const renderReview = () => {
+        const selectedAccItems = accessories.filter(a => selectedAccessories.includes(a.id));
+        const subtotal = (selectedBike?.price || 0) + selectedAccItems.reduce((sum, a) => sum + a.price, 0);
+        const tax = subtotal * 0.08;
+        const total = subtotal + tax;
+        return (
+          <div className="space-y-6">
+            <div><h3 className="text-lg font-semibold mb-2">Order Review</h3><p className="text-sm text-gray-500">Summary of selected products and pricing.</p></div>
+            <Card className="p-6">
+              <h4 className="font-medium mb-4 pb-4 border-b">Order Summary</h4>
+              <div className="space-y-3">
+                {selectedBike && (
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center"><Icon name="bike" size={24} className="text-gray-400" /></div>
+                      <div><p className="font-medium">{selectedBike.name}</p><p className="text-sm text-gray-500">{selectedBike.category}</p></div>
+                    </div>
+                    <p className="font-medium">${selectedBike.price.toLocaleString()}</p>
+                  </div>
+                )}
+                {selectedAccItems.map(acc => (
+                  <div key={acc.id} className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center"><Icon name="package" size={20} className="text-gray-400" /></div>
+                      <div><p className="font-medium">{acc.name}</p><p className="text-sm text-gray-500">{acc.category}</p></div>
+                    </div>
+                    <p className="font-medium">${acc.price}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t space-y-2">
+                <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span>${subtotal.toLocaleString()}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-500">Tax (8%)</span><span>${tax.toFixed(2)}</span></div>
+                <div className="flex justify-between font-semibold text-lg pt-2 border-t"><span>Total</span><span>${total.toFixed(2)}</span></div>
+              </div>
+            </Card>
+            <div className="flex gap-3">
+              <Button variant="secondary" className="flex-1">Save Quote</Button>
+              <Button className="flex-1">Proceed to Checkout</Button>
+            </div>
+          </div>
+        );
+      };
+
+      const renderTabContent = () => {
+        switch (activeTab) {
+          case 'bike-finder': return renderBikeFinder();
+          case 'test-ride': return renderTestRide();
+          case 'recommendations': return renderRecommendations();
+          case 'review': return renderReview();
+          default: return renderBikeFinder();
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-50">
+          <div className="bg-white border-b px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button onClick={onBack} className="p-1 hover:bg-gray-100 rounded"><Icon name="chevronRight" size={20} className="rotate-180" /></button>
+                <div><h1 className="text-xl font-semibold">Deal workspace</h1><p className="text-sm text-gray-500">{deal.id} • Sale workspace</p></div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge variant="info">In Progress</Badge>
+                <Badge variant={deal.inStore ? 'primary' : 'default'}>{deal.inStore ? 'In store' : 'Remote'}</Badge>
+                <Button variant="secondary" icon={isCustomerView ? 'eyeOff' : 'eye'} onClick={() => setIsCustomerView(!isCustomerView)}>{isCustomerView ? 'Staff view' : 'Customer view'}</Button>
+                <Button variant="primary">Save & Exit</Button>
+              </div>
+            </div>
+            <ProgressBar progress={25} className="mt-4" />
+            <div className="flex justify-between text-xs text-gray-500 mt-1"><span>Sale progress</span><span>0%</span></div>
+          </div>
+          <div className="flex">
+            <aside className="w-80 border-r bg-white p-4 space-y-4">
+              <Card className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div><h3 className="font-semibold">{deal.customer}</h3><p className="text-sm text-gray-500">{deal.note}</p></div>
+                  <button className="p-1 hover:bg-gray-100 rounded"><Icon name="bike" size={18} /></button>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-gray-500">Email</span><span>{deal.email}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Phone</span><span>{deal.phone}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Target budget</span><span>{deal.budget}</span></div>
+                </div>
+              </Card>
+              {!isCustomerView && (
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2"><Icon name="mic" size={18} /><span className="font-medium">Transcript</span></div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm">Mic</Button>
+                      <Button variant="ghost" size="sm">View</Button>
+                      <Button variant="secondary" size="sm">Start</Button>
+                    </div>
+                  </div>
+                </Card>
+              )}
+              <Card className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div><h4 className="font-medium">Bike matches</h4><p className="text-xs text-gray-500">Starts broad, tightens as you answer.</p></div>
+                  <Badge>{matchCount}</Badge>
+                </div>
+                <p className="text-sm text-gray-500 mb-3">{Object.keys(answers).length}/5 answered</p>
+                <div className="flex items-center justify-between">
+                  <Button variant="ghost" size="sm">Full catalog</Button>
+                  <Button variant="secondary" size="sm">Choose a bike</Button>
+                  <Button variant="ghost" size="sm">Open list</Button>
+                </div>
+              </Card>
+              {!isCustomerView && (
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3"><h4 className="font-medium">Flow progress</h4><Icon name="settings" size={16} className="text-gray-400" /></div>
+                  <p className="text-xs text-gray-500 mb-3">Sale checkpoints.</p>
+                  <div className="space-y-2">
+                    {flowSteps.map((step) => (
+                      <div key={step.id} className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center ${step.status === 'in-progress' ? 'bg-blue-500' : step.status === 'complete' ? 'bg-green-500' : 'bg-gray-200'}`}>
+                          {step.status === 'in-progress' && <Icon name="circle" size={8} className="text-white" />}
+                          {step.status === 'complete' && <Icon name="check" size={12} className="text-white" />}
+                        </div>
+                        <span className="text-sm flex-1">{step.label}</span>
+                        <Badge variant={step.status === 'in-progress' ? 'primary' : 'default'} size="sm">{step.status === 'in-progress' ? 'In progress' : 'Todo'}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+              {!isCustomerView && (
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3"><h4 className="font-medium">Customer Activity</h4><Icon name="activity" size={16} className="text-gray-400" /></div>
+                  <p className="text-xs text-gray-500 mb-3">Last actions taken in Customer view.</p>
+                  <div className="space-y-3">
+                    {customerActivity.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between">
+                        <div><p className="text-sm">{item.action}</p><p className="text-xs text-gray-400">{item.time}</p></div>
+                        <Badge size="sm">Customer</Badge>
+                      </div>
+                    ))}
+                  </div>
+                  <Button variant="ghost" size="sm" className="w-full mt-3">View all activity</Button>
+                </Card>
+              )}
+            </aside>
+            <main className="flex-1 p-6">
+              <Card className="p-0">
+                <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+                <div className="p-6">{renderTabContent()}</div>
+              </Card>
+            </main>
+          </div>
+        </div>
+      );
+    };
+
+    const InStoreView = () => {
+      const [selectedDeal, setSelectedDeal] = useState(null);
+      const [isCustomerView, setIsCustomerView] = useState(false);
+      if (selectedDeal) {
+        return <DealWorkspace deal={selectedDeal} onBack={() => setSelectedDeal(null)} isCustomerView={isCustomerView} setIsCustomerView={setIsCustomerView} />;
+      }
+      return <DealsPipeline deals={mockDeals} onSelectDeal={setSelectedDeal} onNewDeal={() => setSelectedDeal(mockDeals[0])} />;
+    };
+
+    // ============ CUSTOMER VIEW ============
+    const CustomerView = () => {
+      const [step, setStep] = useState('welcome');
+      const [answers, setAnswers] = useState({});
+      const [selectedBike, setSelectedBike] = useState(null);
+      const [selectedAccessories, setSelectedAccessories] = useState([]);
+
+      const handleAnswer = (questionId, option) => setAnswers({ ...answers, [questionId]: option });
+
+      const renderWelcome = () => (
+        <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-6">
+          <Card className="max-w-lg w-full p-8 text-center">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6"><Icon name="bike" size={40} className="text-blue-600" /></div>
+            <h1 className="text-2xl font-bold mb-2">Welcome to Peachtree Bikes</h1>
+            <p className="text-gray-500 mb-6">Let's find your perfect bike. Answer a few quick questions and we'll show you personalized recommendations.</p>
+            <Button size="lg" onClick={() => setStep('questionnaire')} className="w-full">Start Bike Finder</Button>
+            <p className="text-sm text-gray-400 mt-4">Takes about 2 minutes</p>
+          </Card>
+        </div>
+      );
+
+      const renderQuestionnaire = () => {
+        const currentQuestionIndex = Object.keys(answers).length;
+        const currentQuestion = bikeFinderQuestions[currentQuestionIndex];
+        const progress = (currentQuestionIndex / bikeFinderQuestions.length) * 100;
+        if (!currentQuestion) { setStep('results'); return null; }
+        return (
+          <div className="min-h-screen bg-gray-50 p-6">
+            <div className="max-w-xl mx-auto">
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-500">Question {currentQuestionIndex + 1} of {bikeFinderQuestions.length}</span>
+                  <span className="text-sm text-gray-500">{Math.round(progress)}% complete</span>
+                </div>
+                <ProgressBar progress={progress} />
+              </div>
+              <Card className="p-8">
+                <h2 className="text-xl font-semibold mb-2">{currentQuestion.question}</h2>
+                <p className="text-gray-500 mb-6">{currentQuestion.hint}</p>
+                <div className="space-y-3">
+                  {currentQuestion.options.map(option => (
+                    <button key={option} onClick={() => handleAnswer(currentQuestion.id, option)} className="w-full p-4 border-2 rounded-xl text-left hover:border-blue-300 hover:bg-blue-50 transition-colors flex items-center justify-between group">
+                      <span className="font-medium">{option}</span>
+                      <Icon name="chevronRight" size={20} className="text-gray-300 group-hover:text-blue-500" />
+                    </button>
+                  ))}
+                </div>
+              </Card>
+              {currentQuestionIndex > 0 && (
+                <button onClick={() => { const newAnswers = { ...answers }; const keys = Object.keys(newAnswers); delete newAnswers[keys[keys.length - 1]]; setAnswers(newAnswers); }} className="mt-4 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                  <Icon name="chevronRight" size={16} className="rotate-180" />Go back
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const renderResults = () => {
+        const recommendedBikes = mockProducts.slice(0, 3);
+        return (
+          <div className="min-h-screen bg-gray-50 p-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"><Icon name="checkCircle" size={32} className="text-green-600" /></div>
+                <h1 className="text-2xl font-bold mb-2">We found your matches!</h1>
+                <p className="text-gray-500">Based on your answers, here are our top recommendations.</p>
+              </div>
+              <div className="grid md:grid-cols-3 gap-4 mb-8">
+                {recommendedBikes.map((bike, idx) => (
+                  <Card key={bike.id} className={`p-4 ${selectedBike?.id === bike.id ? 'ring-2 ring-blue-500' : ''}`} onClick={() => setSelectedBike(bike)}>
+                    {idx === 0 && <Badge variant="primary" className="mb-2">Best Match</Badge>}
+                    <div className="w-full h-40 bg-gray-100 rounded-lg mb-4 flex items-center justify-center"><Icon name="bike" size={64} className="text-gray-300" /></div>
+                    <h3 className="font-semibold text-lg">{bike.name}</h3>
+                    <p className="text-sm text-gray-500 mb-2">{bike.category}</p>
+                    <p className="text-xl font-bold text-blue-600">${bike.price.toLocaleString()}</p>
+                    <div className="flex flex-wrap gap-1 mt-3">{bike.terrain.map(t => <Badge key={t} size="sm">{t}</Badge>)}</div>
+                    <div className="mt-4 pt-4 border-t"><p className="text-sm text-gray-600"><span className="font-medium">Why we recommend:</span> Great for {answers['riding-type'] || 'your riding style'}.</p></div>
+                  </Card>
+                ))}
+              </div>
+              <div className="flex justify-center gap-4">
+                <Button variant="secondary" onClick={() => setStep('questionnaire')}>Retake Quiz</Button>
+                <Button onClick={() => setStep('accessories')} disabled={!selectedBike}>Continue with {selectedBike?.name || 'selection'}</Button>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const renderAccessories = () => (
+        <div className="min-h-screen bg-gray-50 p-6">
+          <div className="max-w-4xl mx-auto">
+            <button onClick={() => setStep('results')} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"><Icon name="chevronRight" size={16} className="rotate-180" />Back to bikes</button>
+            <div className="mb-8"><h1 className="text-2xl font-bold mb-2">Complete your setup</h1><p className="text-gray-500">Recommended accessories for your {selectedBike?.name}.</p></div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              {accessories.map(acc => (
+                <Card key={acc.id} className={`p-4 ${selectedAccessories.includes(acc.id) ? 'ring-2 ring-blue-500' : ''}`} onClick={() => {
+                  if (selectedAccessories.includes(acc.id)) setSelectedAccessories(selectedAccessories.filter(id => id !== acc.id));
+                  else setSelectedAccessories([...selectedAccessories, acc.id]);
+                }}>
+                  <div className="flex items-start justify-between">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center"><Icon name="package" size={24} className="text-gray-400" /></div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedAccessories.includes(acc.id) ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
+                      {selectedAccessories.includes(acc.id) && <Icon name="check" size={14} className="text-white" />}
+                    </div>
+                  </div>
+                  <h3 className="font-medium mt-3">{acc.name}</h3>
+                  <p className="text-sm text-gray-500">{acc.category}</p>
+                  <p className="text-lg font-semibold mt-2">${acc.price}</p>
+                </Card>
+              ))}
+            </div>
+            <div className="flex justify-center gap-4">
+              <Button variant="secondary" onClick={() => setStep('results')}>Skip for now</Button>
+              <Button onClick={() => setStep('summary')}>Review Order</Button>
+            </div>
+          </div>
+        </div>
+      );
+
+      const renderSummary = () => {
+        const selectedAccItems = accessories.filter(a => selectedAccessories.includes(a.id));
+        const subtotal = (selectedBike?.price || 0) + selectedAccItems.reduce((sum, a) => sum + a.price, 0);
+        const tax = subtotal * 0.08;
+        const total = subtotal + tax;
+        return (
+          <div className="min-h-screen bg-gray-50 p-6">
+            <div className="max-w-2xl mx-auto">
+              <button onClick={() => setStep('accessories')} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"><Icon name="chevronRight" size={16} className="rotate-180" />Back to accessories</button>
+              <div className="mb-8"><h1 className="text-2xl font-bold mb-2">Order Summary</h1><p className="text-gray-500">Review your selections before checkout.</p></div>
+              <Card className="p-6 mb-6">
+                <h3 className="font-semibold mb-4 pb-4 border-b">Your Selections</h3>
+                <div className="space-y-4">
+                  {selectedBike && (
+                    <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center border"><Icon name="bike" size={32} className="text-gray-400" /></div>
+                      <div className="flex-1"><p className="font-medium">{selectedBike.name}</p><p className="text-sm text-gray-500">{selectedBike.category}</p></div>
+                      <p className="font-semibold">${selectedBike.price.toLocaleString()}</p>
+                    </div>
+                  )}
+                  {selectedAccItems.map(acc => (
+                    <div key={acc.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center border"><Icon name="package" size={24} className="text-gray-400" /></div>
+                      <div className="flex-1"><p className="font-medium">{acc.name}</p><p className="text-sm text-gray-500">{acc.category}</p></div>
+                      <p className="font-semibold">${acc.price}</p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+              <Card className="p-6 mb-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>${subtotal.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Tax (8%)</span><span>${tax.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-xl font-bold pt-3 border-t"><span>Total</span><span>${total.toFixed(2)}</span></div>
+                </div>
+              </Card>
+              <Card className="p-6 bg-blue-50 border-blue-200 mb-6">
+                <div className="flex items-start gap-3">
+                  <Icon name="info" size={20} className="text-blue-600 mt-0.5" />
+                  <div><p className="font-medium text-blue-900">Ready to complete your purchase?</p><p className="text-sm text-blue-700 mt-1">A sales associate will finalize your order and help schedule test rides or delivery.</p></div>
+                </div>
+              </Card>
+              <div className="flex gap-4">
+                <Button variant="secondary" className="flex-1" icon="share">Share with associate</Button>
+                <Button className="flex-1" icon="shoppingCart">Complete Purchase</Button>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      switch (step) {
+        case 'welcome': return renderWelcome();
+        case 'questionnaire': return renderQuestionnaire();
+        case 'results': return renderResults();
+        case 'accessories': return renderAccessories();
+        case 'summary': return renderSummary();
+        default: return renderWelcome();
+      }
+    };
+
+    // ============ MAIN APP ============
+    function PeachtreeBikesApp() {
+      const [userType, setUserType] = useState('store');
+      const [darkMode, setDarkMode] = useState(false);
+
+      const renderView = () => {
+        switch (userType) {
+          case 'admin': return <AdminView />;
+          case 'store': return <InStoreView />;
+          case 'customer': return <CustomerView />;
+          default: return <InStoreView />;
+        }
+      };
+
+      return (
+        <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+          <Header
+            title="Peachtree Bikes"
+            subtitle={userType === 'admin' ? 'Admin Dashboard' : userType === 'store' ? 'In-store sales workspace' : 'Customer Experience'}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            userType={userType}
+            onUserTypeChange={setUserType}
+          />
+          {renderView()}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<PeachtreeBikesApp />);
+  </script>
+</body>
+</html>

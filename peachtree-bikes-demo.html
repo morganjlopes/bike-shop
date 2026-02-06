@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peachtree Bikes - Demo Mode</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+    .product-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .product-placeholder .icon { color: #94a3b8; margin-bottom: 8px; }
+    .product-placeholder .name { font-size: 11px; font-weight: 600; color: #475569; line-height: 1.3; }
+    .product-placeholder .category { font-size: 9px; color: #94a3b8; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // ============ REAL PRODUCT DATA ============
+
+    // BIKES
+    const bikes = {
+      'sworks-epic-8': {
+        id: 'sworks-epic-8',
+        name: 'S-Works Epic 8',
+        category: 'MTB',
+        subcategory: 'Cross-Country',
+        price: 14500,
+        image: 'https://assets.specialized.com/i/specialized/90324-00_EPIC-SW-CARB-VIVPNKMET-MNSHDWMET_HERO-PDP?w=600',
+        description: 'The most capable 120mm bike on the planet. FACT 12m Carbon frame, SRAM XX SL Eagle AXS, RockShox Flight Attendant.',
+        specs: { frame: 'S-Works FACT 12m Carbon', travel: '120mm', drivetrain: 'SRAM XX SL Eagle AXS 12-speed', suspension: 'RockShox SID Ultimate + Flight Attendant', wheels: 'Roval Control SL', weight: '10.24 kg' },
+        terrain: ['Singletrack', 'XC Race', 'Technical'],
+        ridingStyle: ['Speed/Racing', 'Competition'],
+        tier: 'Top Tier',
+        ebike: false,
+      },
+      'epic-8-pro': {
+        id: 'epic-8-pro',
+        name: 'Epic 8 Pro',
+        category: 'MTB',
+        subcategory: 'Cross-Country',
+        price: 9000,
+        image: 'https://assets.specialized.com/i/specialized/90326-10_EPIC-8-PRO-GCLMET-GLDPRL-METWHTSIL_HERO-PDP?w=600',
+        description: 'Pro-level XC performance with FACT 11m Carbon and SRAM X0 Eagle AXS. Reduces pedal bob by 20%.',
+        specs: { frame: 'FACT 11m Carbon', travel: '120mm', drivetrain: 'SRAM X0 Eagle AXS 12-speed', suspension: 'RockShox SID Ultimate', wheels: 'Roval Control Carbon', weight: '10.8 kg' },
+        terrain: ['Singletrack', 'XC Race', 'Technical'],
+        ridingStyle: ['Speed/Racing', 'Competition'],
+        tier: 'High Performance',
+        ebike: false,
+      },
+      'tarmac-sl8-pro': {
+        id: 'tarmac-sl8-pro',
+        name: 'Tarmac SL8 Pro',
+        category: 'Road',
+        subcategory: 'Race',
+        price: 9500,
+        image: 'https://assets.specialized.com/i/specialized/94926-13_TARMAC-SL8-PRO-DI2-REDSKY-CHRM_HERO-PDP?w=600',
+        description: 'The world\'s fastest race bike. 33% stiffer-to-weight vs SL7, 16.6 seconds faster over 40km.',
+        specs: { frame: 'FACT 10r Carbon', groupset: 'Shimano Ultegra Di2 with Power Meter', wheels: 'Roval Rapide CL II', weight: '7.16 kg', tiresClearance: '32mm' },
+        terrain: ['Smooth Pavement', 'Road Race'],
+        ridingStyle: ['Speed/Racing', 'Competition'],
+        tier: 'High Performance',
+        ebike: false,
+      },
+      'tarmac-sl8-expert': {
+        id: 'tarmac-sl8-expert',
+        name: 'Tarmac SL8 Expert',
+        category: 'Road',
+        subcategory: 'Race',
+        price: 6500,
+        image: 'https://assets.specialized.com/i/specialized/94926-34_TARMAC-SL8-EXPERT-AXS-METOBSD-REDPRL-WHT_HERO-PDP?w=600',
+        description: 'Race-ready performance with SRAM Rival eTap AXS and power meter. World Championship geometry.',
+        specs: { frame: 'FACT 10r Carbon', groupset: 'SRAM Rival eTap AXS with Power Meter', wheels: 'Roval C38', weight: '7.77 kg', tiresClearance: '32mm' },
+        terrain: ['Smooth Pavement', 'Road Race'],
+        ridingStyle: ['Speed/Racing', 'Fitness'],
+        tier: 'Performance',
+        ebike: false,
+      },
+    };
+
+    // ACCESSORIES BY CATEGORY
+    const accessories = {
+      helmets: {
+        mtb: [
+          { id: 'prevail-3', name: 'S-Works Prevail 3', price: 300, image: 'https://assets.specialized.com/i/specialized/60923-100_HLMT_SW-PREVAIL-3-HLMT-CE-BLK-M_HERO?w=400', description: 'Most ventilated helmet ever. 24.5% more ventilation, AirCage technology.', shortDesc: '24.5% more ventilation, 5-star rating', recommended: true },
+          { id: 'evade-3', name: 'S-Works Evade 3', price: 300, image: 'https://assets.specialized.com/i/specialized/60723-100_HLMT_SW-EVADE-3-HLMT-CE-BLK-M_HERO?w=400', description: 'Aero helmet with 10% more ventilation than Evade 2.', shortDesc: 'Aero optimized, rear diffuser tech' },
+        ],
+        road: [
+          { id: 'prevail-3', name: 'S-Works Prevail 3', price: 300, image: 'https://assets.specialized.com/i/specialized/60923-100_HLMT_SW-PREVAIL-3-HLMT-CE-BLK-M_HERO?w=400', description: 'Most ventilated helmet ever. 24.5% more ventilation, AirCage technology.', shortDesc: '24.5% more ventilation, 5-star rating', recommended: true },
+          { id: 'propero-4', name: 'Propero 4', price: 150, image: 'https://assets.specialized.com/i/specialized/60124-170_HLMT_PROPERO-4-HLMT-CE-BLK-M_HERO?w=400', description: 'Mid-tier road helmet with MIPS Air Node, excellent ventilation.', shortDesc: 'MIPS Air Node, great ventilation' },
+        ],
+      },
+      shoes: {
+        mtb: [
+          { id: 'sworks-recon', name: 'S-Works Recon', price: 450, image: 'https://assets.specialized.com/i/specialized/61823-004_SHOE_SW-RECON-SL-MTB-SHOE-BLK-44_HERO?w=400&bg=rgb(255,255,255)', description: 'Stiffest XC carbon plate, Dyneema Mesh, dual BOA S3-Snap dials.', shortDesc: 'Stiffness Index: 13.0, dual BOA', recommended: true },
+          { id: 'recon-3', name: 'Recon 3.0', price: 250, image: 'https://assets.specialized.com/i/specialized/61524-3042_SHOE_24_RECON_30_Black_HERO?w=400&bg=rgb(255,255,255)', description: 'Carbon sole with STRIDE toe-flex. Stiffness Index: 10.0.', shortDesc: 'Stiffness Index: 10.0, carbon sole' },
+        ],
+        road: [
+          { id: 'torch-3', name: 'Torch 3.0', price: 250, image: 'https://assets.specialized.com/i/specialized/61023-234_SHOE_TORCH-30-RD-SHOE-WHT-44_HERO?w=400&bg=rgb(255,255,255)', description: 'FACT carbon composite sole, dual BOA Li2 dials.', shortDesc: 'Stiffness Index: 8.5, dual BOA', recommended: true },
+          { id: 'torch-2', name: 'Torch 2.0', price: 180, image: 'https://assets.specialized.com/i/specialized/61023-334_SHOE_TORCH-20-RD-SHOE-WHT-44_HERO?w=400&bg=rgb(255,255,255)', description: 'Full carbon sole at entry price. Single BOA Li2 dial.', shortDesc: 'Stiffness Index: 7.0, carbon sole' },
+        ],
+      },
+      pedals: {
+        mtb: [
+          { id: 'xtr-spd', name: 'Shimano XTR PD-M9100', price: 180, image: 'images/xtr-spd.png', description: 'Ultimate XC clipless pedal. Mud-shedding design, 310g.', shortDesc: '310g, enhanced contact area', recommended: true },
+          { id: 'xt-spd', name: 'Shimano XT PD-M8100', price: 125, image: 'images/xt-spd.png', description: 'Pro-level XC pedal, forged alloy body, chrome-moly axle.', shortDesc: '339g, large platform' },
+        ],
+        road: [
+          { id: 'ultegra-spd-sl', name: 'Shimano Ultegra PD-R8000', price: 180, image: 'images/ultegra-spd-sl.png', description: 'Wide platform, carbon composite body, stainless steel plate.', shortDesc: '248g, wide platform', recommended: true },
+          { id: 'keo-max-carbon', name: 'Look Kéo 2 Max Carbon', price: 135, image: 'images/keo-max-carbon.png', description: 'Carbon body, 500mm² platform, chromoly spindle.', shortDesc: '250g pair, 500mm² platform' },
+        ],
+      },
+      bottleCages: {
+        mtb: [
+          { id: 'sworks-zee-cage', name: 'S-Works Carbon Zee Cage II', price: 80, image: 'https://assets.specialized.com/i/specialized/43020-050_CAGE_SW-ZEE-CAGE-II-CARBON-SIDE-LOADING-RIGHT-DT-MATTE-CARB_HERO?w=400', description: '100% FACT carbon, side-load design, SWAT compatible.', shortDesc: '28g, FACT Carbon', recommended: true },
+          { id: 'zee-cage', name: 'Zee Cage II', price: 25, image: 'https://assets.specialized.com/i/specialized/43020-211_CAGE_ZEE-CAGE-II-SIDE-LOADING-RIGHT-DT-GLOSS-BLK_HERO-SQUARE?w=400', description: 'Reinforced composite, side-load design, SWAT compatible.', shortDesc: '43g, composite' },
+        ],
+        road: [
+          { id: 'carbon-rib-cage', name: 'S-Works Carbon Rib Cage III', price: 80, image: 'https://assets.specialized.com/i/specialized/43019-013_CAGE_SW-RIB-CAGE-III-CARBON-CARB-GLOSS-BLK_HERO?w=400', description: '100% FACT carbon, split design, low profile.', shortDesc: '24g, FACT Carbon', recommended: true },
+          { id: 'rib-cage', name: 'Rib Cage II', price: 25, image: 'https://assets.specialized.com/i/specialized/43020-100_CAGE_RIB-CAGE-II-MATTE-BLK_TOP?w=400', description: 'Reinforced composite, optimal bottle retention.', shortDesc: '32g, composite' },
+        ],
+      },
+      toolKits: {
+        mtb: [
+          { id: 'mattone-seat-pack', name: 'SILCA Mattone Seat Pack', price: 65, image: 'images/mattone-seat-pack.png', description: 'Book-style saddle bag with BOA closure.', shortDesc: '0.61L, BOA closure' },
+          { id: 'elettrico-pump', name: 'Air Tool MTB Mini Pump', price: 35, image: 'images/elettrico-pump.png', description: 'Compact mini pump for on-trail emergencies.', shortDesc: '120 PSI, frame mountable' },
+          { id: 'air-tool-shock', name: 'Air Tool Shock Pump', price: 60, image: 'images/air-tool-shock.png', description: 'High-pressure shock pump, 300 PSI max.', shortDesc: '300 PSI, micro air bleed' },
+        ],
+        road: [
+          { id: 'm-caddy-kit', name: 'EMT Cage Mount Road', price: 55, image: 'images/m-caddy-kit.png', description: 'Complete kit with multi-tool, CO2, tire levers in cage mount.', shortDesc: 'Complete kit', recommended: true },
+        ],
+      },
+    };
+
+    // DEMO SCENARIOS
+    const demoScenarios = {
+      mtb: {
+        name: 'MTB Demo',
+        answers: { 'riding-type': 'MTB', 'terrain': 'Singletrack (Technical)', 'goal': 'Speed/Racing', 'ebike': 'No', 'ebike-feel': 'Skip', 'budget': 'Top Tier' },
+        recommendedBikes: ['sworks-epic-8', 'epic-8-pro'],
+      },
+      road: {
+        name: 'Road Demo',
+        answers: { 'riding-type': 'Road', 'terrain': 'Smooth Pavement', 'goal': 'Speed/Racing', 'ebike': 'No', 'ebike-feel': 'Skip', 'budget': 'High Performance' },
+        recommendedBikes: ['tarmac-sl8-pro', 'tarmac-sl8-expert'],
+      },
+    };
+
+    const bikeFinderQuestions = [
+      { id: 'riding-type', question: 'What type of riding do you plan to do most often?', hint: "If they're unsure, ask: what do your best days on a bike look like?", options: ['MTB', 'Road', 'Gravel', 'Fitness/Commute'] },
+      { id: 'terrain', question: 'Where will you ride most often?', hint: 'Pick the terrain that matches their most common route.', options: { 'MTB': ['Singletrack (Technical)', 'Flow Trails', 'XC Race Course', 'Mixed Terrain'], 'Road': ['Smooth Pavement', 'Mixed Surfaces', 'Climbing', 'Criterium'], 'Gravel': ['Gravel Roads', 'Mixed Surfaces', 'Light Trails', 'Bikepacking'], 'Fitness/Commute': ['Urban', 'Paved Paths', 'Mixed', 'Hilly'] } },
+      { id: 'goal', question: "What's the main goal?", hint: 'This helps pick the right geometry + component focus.', options: ['Speed/Racing', 'Fitness', 'Recreation', 'Competition'] },
+      { id: 'ebike', question: 'Do you want an eBike?', hint: "If they're unsure, frame it as 'assist vs no-assist'.", options: ['Yes', 'No', 'Open to it'] },
+      { id: 'ebike-feel', question: 'If yes: what feel do you want?', hint: 'Choose between maximum assist or a lighter, more natural ride feel.', options: ['Maximum assist', 'Natural feel', 'Skip'] },
+      { id: 'budget', question: 'Budget tier', hint: "We'll match spec level to their expectations.", options: ['Entry Level', 'Performance', 'High Performance', 'Top Tier'] },
+    ];
+
+    // ============ PRODUCT IMAGE COMPONENT ============
+    const ProductImage = ({ src, name, category, type = 'accessory', className = '' }) => {
+      const [failed, setFailed] = React.useState(false);
+      const [loaded, setLoaded] = React.useState(false);
+
+      const iconSvg = type === 'bike'
+        ? '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>'
+        : '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>';
+
+      if (failed || !src) {
+        return (
+          <div className={`product-placeholder ${className}`}>
+            <div className="icon" dangerouslySetInnerHTML={{ __html: iconSvg }} />
+            <div className="name">{name}</div>
+            {category && <div className="category">{category}</div>}
+          </div>
+        );
+      }
+
+      return (
+        <div className={`relative ${className}`} style={{ width: '100%', height: '100%' }}>
+          {!loaded && (
+            <div className="product-placeholder absolute inset-0">
+              <div className="icon" dangerouslySetInnerHTML={{ __html: iconSvg }} />
+              <div className="name">{name}</div>
+            </div>
+          )}
+          <img
+            src={src}
+            alt={name}
+            className={`w-full h-full object-contain ${loaded ? 'opacity-100' : 'opacity-0'}`}
+            style={{ transition: 'opacity 0.3s' }}
+            onLoad={() => setLoaded(true)}
+            onError={() => setFailed(true)}
+          />
+        </div>
+      );
+    };
+
+    // ============ ICONS ============
+    const Icon = ({ name, size = 20, className = '' }) => {
+      const icons = {
+        bike: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>,
+        check: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>,
+        chevronRight: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>,
+        chevronDown: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>,
+        chevronUp: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m18 15-6-6-6 6"/></svg>,
+        settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+        sliders: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>,
+        rotateCcw: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>,
+        shoppingCart: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>,
+        checkCircle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+        eye: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>,
+        mic: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>,
+        activity: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+        circle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/></svg>,
+        play: <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+        package: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>,
+        clipboardList: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>,
+        ruler: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>,
+        star: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+        fileText: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>,
+        minus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/></svg>,
+        plus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+        x: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+      };
+      return icons[name] || null;
+    };
+
+    // ============ COMPONENTS ============
+    const Badge = ({ children, variant = 'default', size = 'sm' }) => {
+      const variants = { default: 'bg-gray-100 text-gray-700', primary: 'bg-blue-100 text-blue-700', success: 'bg-green-100 text-green-700', warning: 'bg-yellow-100 text-yellow-700', info: 'bg-blue-50 text-blue-600' };
+      const sizes = { sm: 'px-2 py-0.5 text-xs', md: 'px-3 py-1 text-sm' };
+      return <span className={`inline-flex items-center rounded-full font-medium ${variants[variant]} ${sizes[size]}`}>{children}</span>;
+    };
+
+    const Button = ({ children, variant = 'primary', size = 'md', icon, onClick, className = '', disabled = false }) => {
+      const variants = { primary: 'bg-blue-500 hover:bg-blue-600 text-white', secondary: 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300', ghost: 'hover:bg-gray-100 text-gray-600', success: 'bg-green-500 hover:bg-green-600 text-white' };
+      const sizes = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-sm', lg: 'px-6 py-3 text-base' };
+      return (
+        <button onClick={onClick} disabled={disabled} className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors ${variants[variant]} ${sizes[size]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}>
+          {icon && <Icon name={icon} size={16} />}
+          {children}
+        </button>
+      );
+    };
+
+    const Card = ({ children, className = '', onClick, selected = false }) => (
+      <div onClick={onClick} className={`bg-white rounded-xl border ${selected ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200'} shadow-sm ${onClick ? 'cursor-pointer hover:shadow-md transition-all' : ''} ${className}`}>
+        {children}
+      </div>
+    );
+
+    const ProgressBar = ({ progress, className = '' }) => (
+      <div className={`h-1.5 bg-gray-200 rounded-full overflow-hidden ${className}`}>
+        <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${progress}%` }} />
+      </div>
+    );
+
+    const Tabs = ({ tabs, activeTab, onChange }) => (
+      <div className="flex border-b border-gray-200">
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => onChange(tab.id)} className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    );
+
+    // Section Header Component (matching the new style)
+    const SectionHeader = ({ icon, title, description, badge, action }) => (
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Icon name={icon} size={20} className="text-gray-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            <p className="text-sm text-gray-500">{description}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {badge}
+          {action}
+        </div>
+      </div>
+    );
+
+    // Collapsible Accessory Category Component
+    const AccessoryCategory = ({ title, items, selectedId, onSelect, onSkip, onAlreadyOwns, onViewAll, expanded, onToggle }) => {
+      const topPick = items.find(i => i.recommended) || items[0];
+      const isSelected = items.some(i => selectedId === i.id);
+      const selectedItem = items.find(i => selectedId === i.id);
+
+      return (
+        <Card className="overflow-hidden">
+          {/* Collapsed Header */}
+          <button onClick={onToggle} className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <span className="font-medium text-gray-900">{title}</span>
+              <Badge variant={expanded ? 'primary' : 'default'}>{expanded ? 'Open' : selectedId ? 'Selected' : 'Open'}</Badge>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border">
+                <span className="text-sm text-gray-500">Top</span>
+                <span className="text-sm font-medium">{selectedItem?.name || topPick.name}</span>
+                <span className="text-sm text-gray-500">${selectedItem?.price || topPick.price}</span>
+              </div>
+              <Icon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} className="text-gray-400" />
+            </div>
+          </button>
+
+          {/* Top pick subtitle when collapsed */}
+          {!expanded && !selectedId && (
+            <div className="px-4 pb-3 -mt-2">
+              <p className="text-sm text-gray-500">Top pick: {topPick.name} · ${topPick.price}</p>
+            </div>
+          )}
+
+          {/* Expanded Content */}
+          {expanded && (
+            <div className="border-t bg-gray-50 p-4">
+              {/* Product Options */}
+              <div className="flex gap-3 overflow-x-auto pb-3">
+                {items.map(item => (
+                  <div
+                    key={item.id}
+                    onClick={() => onSelect(item.id)}
+                    className={`flex-shrink-0 w-48 bg-white rounded-xl border p-3 cursor-pointer transition-all ${
+                      selectedId === item.id ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="w-full h-20 bg-gray-100 rounded-lg mb-2 overflow-hidden">
+                      <ProductImage src={item.image} name={item.name} category={item.shortDesc} type="accessory" />
+                    </div>
+                    <p className="font-medium text-sm truncate">{item.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{item.shortDesc}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="font-semibold">${item.price}</span>
+                      {item.recommended && <Badge variant="primary" size="sm">Top pick</Badge>}
+                    </div>
+                    {selectedId === item.id ? (
+                      <div className="mt-2 flex items-center gap-1 text-blue-600 text-xs">
+                        <Icon name="checkCircle" size={14} />
+                        <span>Selected</span>
+                      </div>
+                    ) : (
+                      <button className="mt-2 w-full py-1.5 border rounded-lg text-sm hover:bg-gray-50 flex items-center justify-center gap-1">
+                        <Icon name="plus" size={14} />
+                        Add
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-3 border-t">
+                <button onClick={onAlreadyOwns} className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-white">
+                  <Icon name="checkCircle" size={16} />
+                  Already owns
+                </button>
+                <button onClick={onSkip} className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-white">
+                  <Icon name="minus" size={16} />
+                  Skip
+                </button>
+                <button onClick={onViewAll} className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-white">
+                  <Icon name="eye" size={16} />
+                  View all {title.toLowerCase()}
+                </button>
+              </div>
+            </div>
+          )}
+        </Card>
+      );
+    };
+
+    // Demo Selector (bottom bar)
+    const DemoSelector = ({ onSelect, currentDemo }) => (
+      <div className="bg-gray-800 text-white px-4 py-2 flex-shrink-0">
+        <div className="flex items-center justify-center gap-6 max-w-7xl mx-auto">
+          <div className="flex items-center gap-2 text-gray-400 text-sm">
+            <Icon name="play" size={14} />
+            <span>Demo</span>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => onSelect('mtb')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${currentDemo === 'mtb' ? 'bg-green-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>🚵 MTB</button>
+            <button onClick={() => onSelect('road')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${currentDemo === 'road' ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>🚴 Road</button>
+            <button onClick={() => onSelect(null)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${!currentDemo ? 'bg-gray-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>Manual</button>
+          </div>
+          {currentDemo && <div className="text-xs text-gray-400">Pre-loaded: {demoScenarios[currentDemo].name}</div>}
+        </div>
+      </div>
+    );
+
+    // Header
+    const Header = ({ onLogoClick }) => (
+      <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
+        <a href="peachtree-bikes-prototype.html" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+            <Icon name="bike" size={24} className="text-gray-700" />
+          </div>
+          <div>
+            <h1 className="font-semibold text-gray-900">Peachtree Bikes</h1>
+            <p className="text-xs text-gray-500">In-store sales workspace</p>
+          </div>
+        </a>
+        <div className="flex items-center gap-3">
+          <Badge variant="info">In Progress</Badge>
+          <Badge variant="primary">In store</Badge>
+          <Button variant="secondary" icon="eye">Customer view</Button>
+          <Button variant="primary">Save & Exit</Button>
+        </div>
+      </header>
+    );
+
+    // ============ MAIN DEAL WORKSPACE ============
+    const DealWorkspace = ({ demoMode, answers, setAnswers, selectedBike, setSelectedBike, selectedAccessories, setSelectedAccessories }) => {
+      const [activeTab, setActiveTab] = useState('bike-finder');
+      const [expandedCategories, setExpandedCategories] = useState({});
+      const [skippedCategories, setSkippedCategories] = useState(new Set());
+      const [ownedCategories, setOwnedCategories] = useState(new Set());
+
+      const tabs = [
+        { id: 'bike-finder', label: 'Bike Finder' },
+        { id: 'test-fit', label: 'Test Fit' },
+        { id: 'recommendations', label: 'Recommendations' },
+        { id: 'review', label: 'Review' },
+      ];
+
+      const ridingType = answers['riding-type'] || 'MTB';
+      const accessoryType = ridingType.toLowerCase() === 'road' ? 'road' : 'mtb';
+
+      const matchCount = useMemo(() => {
+        const answered = Object.keys(answers).filter(k => answers[k] && answers[k] !== 'Skip').length;
+        return Math.max(2, 8 - answered);
+      }, [answers]);
+
+      const recommendedBikes = useMemo(() => {
+        if (demoMode && demoScenarios[demoMode]) {
+          return demoScenarios[demoMode].recommendedBikes.map(id => bikes[id]);
+        }
+        const type = answers['riding-type'];
+        return Object.values(bikes).filter(b => (!type || b.category === type));
+      }, [demoMode, answers]);
+
+      const getAccessoriesForType = (category) => accessories[category]?.[accessoryType] || [];
+
+      const handleAnswerSelect = (questionId, option) => {
+        setAnswers({ ...answers, [questionId]: option });
+      };
+
+      const toggleCategory = (category) => {
+        setExpandedCategories(prev => ({ ...prev, [category]: !prev[category] }));
+      };
+
+      const flowSteps = [
+        { id: 'bike-finder', label: 'Bike Finder', status: activeTab === 'bike-finder' ? 'in-progress' : Object.keys(answers).length >= 4 ? 'complete' : 'todo' },
+        { id: 'test-fit', label: 'Test Fit', status: activeTab === 'test-fit' ? 'in-progress' : 'todo' },
+        { id: 'recommendations', label: 'Recommendations', status: activeTab === 'recommendations' ? 'in-progress' : selectedBike ? 'complete' : 'todo' },
+        { id: 'review', label: 'Review', status: activeTab === 'review' ? 'in-progress' : 'todo' },
+      ];
+
+      const customerActivity = [
+        { action: 'Viewed recommendations', time: '2m ago' },
+        { action: 'Opened Bike Finder summary', time: '6m ago' },
+        { action: 'Checked pricing', time: '12m ago' },
+      ];
+
+      // ============ BIKE FINDER TAB ============
+      const renderBikeFinder = () => (
+        <div className="space-y-4">
+          <SectionHeader
+            icon="sliders"
+            title="Bike Finder"
+            description="Decision-tree questionnaire that narrows the catalog."
+            badge={<Badge variant="info">{matchCount} matches</Badge>}
+            action={<Button variant="ghost" size="sm" icon="rotateCcw" onClick={() => setAnswers({})}>Reset</Button>}
+          />
+
+          <div className="space-y-3">
+            {bikeFinderQuestions.map((q) => {
+              let options = q.options;
+              if (q.id === 'terrain' && typeof q.options === 'object' && !Array.isArray(q.options)) {
+                options = q.options[answers['riding-type']] || ['Mixed Terrain', 'Paved', 'Trails', 'Urban'];
+              }
+              const isAnswered = !!answers[q.id];
+              const isCollapsed = isAnswered;
+
+              return (
+                <Card key={q.id} className="overflow-hidden">
+                  {/* Question Header - Always visible */}
+                  <button
+                    onClick={() => isAnswered && setAnswers({ ...answers, [q.id]: undefined })}
+                    className={`w-full p-4 flex items-center justify-between text-left ${isCollapsed ? 'hover:bg-gray-50' : ''}`}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">{q.question}</h4>
+                        <Badge variant={isAnswered ? 'success' : 'warning'} size="sm">
+                          {isAnswered ? answers[q.id] : 'Unanswered'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-0.5">{q.hint}</p>
+                    </div>
+                    <Icon name={isCollapsed ? 'chevronDown' : 'chevronUp'} size={18} className="text-gray-400" />
+                  </button>
+
+                  {/* Options - Only visible when not collapsed */}
+                  {!isCollapsed && (
+                    <div className="px-4 pb-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        {Array.isArray(options) && options.map(opt => (
+                          <button
+                            key={opt}
+                            onClick={() => handleAnswerSelect(q.id, opt)}
+                            className={`p-3 border rounded-lg text-left text-sm transition-all ${
+                              answers[q.id] === opt
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
+                            }`}
+                          >
+                            <span className="font-medium">{opt}</span>
+                            <span className="block text-xs text-gray-400 mt-0.5">Tap to choose</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      );
+
+      // ============ TEST FIT TAB ============
+      const renderTestFit = () => (
+        <div className="space-y-6">
+          {/* Test Ride Section */}
+          <Card className="p-6">
+            <SectionHeader
+              icon="activity"
+              title="Test Ride"
+              description="Capture riding feedback and handling impressions."
+            />
+            <div className="space-y-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Bike Tested</label>
+                <select className="w-full p-2 border rounded-lg">
+                  <option value="">Select bike...</option>
+                  {recommendedBikes.map(b => (
+                    <option key={b.id} value={b.id}>{b.name} - ${b.price.toLocaleString()}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Comfort Rating</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <button key={n} className="flex-1 h-10 border rounded-lg hover:bg-blue-50 hover:border-blue-300 text-sm font-medium">{n}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Handling Rating</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <button key={n} className="flex-1 h-10 border rounded-lg hover:bg-blue-50 hover:border-blue-300 text-sm font-medium">{n}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Ride Notes</label>
+                <textarea placeholder="Observations about comfort, handling, responsiveness..." className="w-full p-3 border rounded-lg text-sm resize-none h-20" />
+              </div>
+            </div>
+          </Card>
+
+          {/* Fit To You Section */}
+          <Card className="p-6">
+            <SectionHeader
+              icon="ruler"
+              title="Fit To You"
+              description="Sizing and fit checklist with bike measurements."
+            />
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Frame Size</label>
+                  <select className="w-full p-2 border rounded-lg">
+                    <option>Select size...</option>
+                    <option>Small (S)</option>
+                    <option>Medium (M)</option>
+                    <option>Large (L)</option>
+                    <option>X-Large (XL)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Saddle Height (cm)</label>
+                  <input type="number" placeholder="e.g. 72" className="w-full p-2 border rounded-lg" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium mb-2">Fit Checklist</label>
+                {['Stand-over height verified', 'Reach comfortable', 'Saddle height set', 'Handlebar position adjusted', 'Brake levers reachable', 'Cleat position set'].map((item, idx) => (
+                  <label key={idx} className="flex items-center gap-3 cursor-pointer py-1">
+                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-500" />
+                    <span className="text-sm">{item}</span>
+                  </label>
+                ))}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Fit Notes</label>
+                <textarea placeholder="Additional fitting notes, adjustments made..." className="w-full p-3 border rounded-lg text-sm resize-none h-20" />
+              </div>
+            </div>
+          </Card>
+        </div>
+      );
+
+      // ============ RECOMMENDATIONS TAB ============
+      const renderRecommendations = () => (
+        <div className="space-y-6">
+          <SectionHeader
+            icon="star"
+            title="Recommendations"
+            description="Top bike picks and matching accessories based on your answers."
+          />
+
+          {/* Recommended Bikes */}
+          <div>
+            <h4 className="font-medium mb-3 flex items-center gap-2">
+              <Icon name="bike" size={18} />
+              Recommended Bikes
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              {recommendedBikes.map((bike, idx) => (
+                <Card
+                  key={bike.id}
+                  selected={selectedBike?.id === bike.id}
+                  className="p-4 relative"
+                  onClick={() => setSelectedBike(bike)}
+                >
+                  {idx === 0 && (
+                    <div className="absolute top-3 right-3">
+                      <Badge variant="primary">Best Match</Badge>
+                    </div>
+                  )}
+                  <div className="w-full h-36 bg-gray-50 rounded-lg mb-3 overflow-hidden">
+                    <ProductImage src={bike.image} name={bike.name} category={`${bike.category} • ${bike.subcategory}`} type="bike" />
+                  </div>
+                  <h5 className="font-semibold text-lg">{bike.name}</h5>
+                  <p className="text-sm text-gray-500">{bike.category} • {bike.subcategory}</p>
+                  <p className="text-xl font-bold text-blue-600 mt-2">${bike.price.toLocaleString()}</p>
+                  <p className="text-xs text-gray-500 mt-2 line-clamp-2">{bike.description}</p>
+                  {selectedBike?.id === bike.id && (
+                    <div className="mt-3 pt-3 border-t flex items-center gap-2 text-blue-600">
+                      <Icon name="checkCircle" size={16} />
+                      <span className="text-sm font-medium">Selected</span>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Accessories - Collapsible Categories */}
+          {selectedBike && (
+            <div className="space-y-3">
+              <h4 className="font-medium flex items-center gap-2">
+                <Icon name="package" size={18} />
+                Accessories for {selectedBike.name}
+              </h4>
+
+              <AccessoryCategory
+                title="Helmet"
+                items={getAccessoriesForType('helmets')}
+                selectedId={selectedAccessories.find(id => getAccessoriesForType('helmets').some(i => i.id === id))}
+                onSelect={(id) => {
+                  const others = selectedAccessories.filter(aid => !getAccessoriesForType('helmets').some(i => i.id === aid));
+                  setSelectedAccessories([...others, id]);
+                  setExpandedCategories(prev => ({ ...prev, helmets: false }));
+                }}
+                onSkip={() => { setSkippedCategories(prev => new Set([...prev, 'helmets'])); setExpandedCategories(prev => ({ ...prev, helmets: false })); }}
+                onAlreadyOwns={() => { setOwnedCategories(prev => new Set([...prev, 'helmets'])); setExpandedCategories(prev => ({ ...prev, helmets: false })); }}
+                onViewAll={() => {}}
+                expanded={expandedCategories.helmets}
+                onToggle={() => toggleCategory('helmets')}
+              />
+
+              <AccessoryCategory
+                title="Clip-in Shoes"
+                items={getAccessoriesForType('shoes')}
+                selectedId={selectedAccessories.find(id => getAccessoriesForType('shoes').some(i => i.id === id))}
+                onSelect={(id) => {
+                  const others = selectedAccessories.filter(aid => !getAccessoriesForType('shoes').some(i => i.id === aid));
+                  setSelectedAccessories([...others, id]);
+                  setExpandedCategories(prev => ({ ...prev, shoes: false }));
+                }}
+                onSkip={() => { setSkippedCategories(prev => new Set([...prev, 'shoes'])); setExpandedCategories(prev => ({ ...prev, shoes: false })); }}
+                onAlreadyOwns={() => { setOwnedCategories(prev => new Set([...prev, 'shoes'])); setExpandedCategories(prev => ({ ...prev, shoes: false })); }}
+                onViewAll={() => {}}
+                expanded={expandedCategories.shoes}
+                onToggle={() => toggleCategory('shoes')}
+              />
+
+              <AccessoryCategory
+                title="Pedals"
+                items={getAccessoriesForType('pedals')}
+                selectedId={selectedAccessories.find(id => getAccessoriesForType('pedals').some(i => i.id === id))}
+                onSelect={(id) => {
+                  const others = selectedAccessories.filter(aid => !getAccessoriesForType('pedals').some(i => i.id === aid));
+                  setSelectedAccessories([...others, id]);
+                  setExpandedCategories(prev => ({ ...prev, pedals: false }));
+                }}
+                onSkip={() => { setSkippedCategories(prev => new Set([...prev, 'pedals'])); setExpandedCategories(prev => ({ ...prev, pedals: false })); }}
+                onAlreadyOwns={() => { setOwnedCategories(prev => new Set([...prev, 'pedals'])); setExpandedCategories(prev => ({ ...prev, pedals: false })); }}
+                onViewAll={() => {}}
+                expanded={expandedCategories.pedals}
+                onToggle={() => toggleCategory('pedals')}
+              />
+
+              <AccessoryCategory
+                title="Water Bottle Cages"
+                items={getAccessoriesForType('bottleCages')}
+                selectedId={selectedAccessories.find(id => getAccessoriesForType('bottleCages').some(i => i.id === id))}
+                onSelect={(id) => {
+                  const others = selectedAccessories.filter(aid => !getAccessoriesForType('bottleCages').some(i => i.id === aid));
+                  setSelectedAccessories([...others, id]);
+                  setExpandedCategories(prev => ({ ...prev, bottleCages: false }));
+                }}
+                onSkip={() => { setSkippedCategories(prev => new Set([...prev, 'bottleCages'])); setExpandedCategories(prev => ({ ...prev, bottleCages: false })); }}
+                onAlreadyOwns={() => { setOwnedCategories(prev => new Set([...prev, 'bottleCages'])); setExpandedCategories(prev => ({ ...prev, bottleCages: false })); }}
+                onViewAll={() => {}}
+                expanded={expandedCategories.bottleCages}
+                onToggle={() => toggleCategory('bottleCages')}
+              />
+
+              <AccessoryCategory
+                title={accessoryType === 'mtb' ? 'On the Trail Tool Kit' : 'On the Road Tool Kit'}
+                items={getAccessoriesForType('toolKits')}
+                selectedId={selectedAccessories.find(id => getAccessoriesForType('toolKits').some(i => i.id === id))}
+                onSelect={(id) => {
+                  const others = selectedAccessories.filter(aid => !getAccessoriesForType('toolKits').some(i => i.id === aid));
+                  setSelectedAccessories([...others, id]);
+                  setExpandedCategories(prev => ({ ...prev, toolKits: false }));
+                }}
+                onSkip={() => { setSkippedCategories(prev => new Set([...prev, 'toolKits'])); setExpandedCategories(prev => ({ ...prev, toolKits: false })); }}
+                onAlreadyOwns={() => { setOwnedCategories(prev => new Set([...prev, 'toolKits'])); setExpandedCategories(prev => ({ ...prev, toolKits: false })); }}
+                onViewAll={() => {}}
+                expanded={expandedCategories.toolKits}
+                onToggle={() => toggleCategory('toolKits')}
+              />
+            </div>
+          )}
+        </div>
+      );
+
+      // ============ REVIEW TAB ============
+      const renderReview = () => {
+        const allAccessories = [
+          ...getAccessoriesForType('helmets'),
+          ...getAccessoriesForType('shoes'),
+          ...getAccessoriesForType('pedals'),
+          ...getAccessoriesForType('bottleCages'),
+          ...getAccessoriesForType('toolKits'),
+        ];
+        const selectedAccItems = allAccessories.filter(a => selectedAccessories.includes(a.id));
+        const subtotal = (selectedBike?.price || 0) + selectedAccItems.reduce((sum, a) => sum + a.price, 0);
+        const tax = subtotal * 0.08;
+        const total = subtotal + tax;
+
+        return (
+          <div className="space-y-6">
+            <SectionHeader
+              icon="fileText"
+              title="Order Review"
+              description="Summary of selected products and pricing."
+            />
+
+            <Card className="p-6">
+              <h4 className="font-medium mb-4 pb-4 border-b">Order Summary</h4>
+              <div className="space-y-4">
+                {selectedBike && (
+                  <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="w-20 h-20 bg-white rounded-lg overflow-hidden border">
+                      <img src={selectedBike.image} alt={selectedBike.name} className="w-full h-full object-contain" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold">{selectedBike.name}</p>
+                      <p className="text-sm text-gray-500">{selectedBike.category} • {selectedBike.subcategory}</p>
+                    </div>
+                    <p className="font-semibold text-lg">${selectedBike.price.toLocaleString()}</p>
+                  </div>
+                )}
+                {selectedAccItems.map(acc => (
+                  <div key={acc.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-16 h-16 bg-white rounded-lg overflow-hidden border flex-shrink-0">
+                      <img src={acc.image} alt={acc.name} className="w-full h-full object-contain" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{acc.name}</p>
+                      <p className="text-sm text-gray-500">{acc.shortDesc}</p>
+                    </div>
+                    <p className="font-semibold">${acc.price}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 pt-4 border-t space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Subtotal</span>
+                  <span>${subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Tax (8%)</span>
+                  <span>${tax.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-xl pt-3 border-t">
+                  <span>Total</span>
+                  <span className="text-blue-600">${total.toFixed(2)}</span>
+                </div>
+              </div>
+            </Card>
+
+            <div className="flex gap-3">
+              <Button variant="secondary" className="flex-1">Save Quote</Button>
+              <Button variant="success" className="flex-1" icon="shoppingCart">Proceed to Checkout</Button>
+            </div>
+          </div>
+        );
+      };
+
+      const renderTabContent = () => {
+        switch (activeTab) {
+          case 'bike-finder': return renderBikeFinder();
+          case 'test-fit': return renderTestFit();
+          case 'recommendations': return renderRecommendations();
+          case 'review': return renderReview();
+          default: return renderBikeFinder();
+        }
+      };
+
+      const deal = {
+        id: 'D-1046',
+        customer: demoMode === 'road' ? 'Alex Thompson' : 'Maya Patel',
+        email: demoMode === 'road' ? 'alex.t@example.com' : 'maya.patel@example.com',
+        phone: '+1 (415) 555-0127',
+        budget: demoMode === 'road' ? '$6,000-$12,000' : '$8,000-$15,000',
+        note: demoMode === 'road' ? 'Competitive cyclist • Road racing' : 'XC racer • Wants technical capability',
+      };
+
+      return (
+        <div className="flex flex-1">
+          {/* Left sidebar - WIDENED to 96 (384px) */}
+          <aside className="w-96 border-r bg-white p-5 space-y-4 overflow-y-auto">
+            {/* Customer info */}
+            <Card className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="font-semibold text-lg">{deal.customer}</h3>
+                  <p className="text-sm text-gray-500">{deal.note}</p>
+                </div>
+                <button className="p-2 hover:bg-gray-100 rounded-lg">
+                  <Icon name="bike" size={18} />
+                </button>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Email</span>
+                  <span className="text-right">{deal.email}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Phone</span>
+                  <span>{deal.phone}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Target budget</span>
+                  <span className="font-medium">{deal.budget}</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* Transcript */}
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="mic" size={18} />
+                  <span className="font-medium">Transcript</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm">Mic</Button>
+                  <Button variant="secondary" size="sm">Start</Button>
+                </div>
+              </div>
+            </Card>
+
+            {/* Bike matches - SIMPLIFIED */}
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium">Bike matches</h4>
+                <Badge variant="primary" size="md">{matchCount}</Badge>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">Starts broad, tightens as you answer.</p>
+              <p className="text-sm text-gray-600 mb-4">{Object.keys(answers).filter(k => answers[k]).length}/{bikeFinderQuestions.length} answered</p>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="flex-1"
+                  onClick={() => setActiveTab('recommendations')}
+                >
+                  Choose a bike
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  className="flex-1"
+                >
+                  View all
+                </Button>
+              </div>
+            </Card>
+
+            {/* Flow progress */}
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium">Flow progress</h4>
+                <Icon name="settings" size={16} className="text-gray-400" />
+              </div>
+              <p className="text-xs text-gray-500 mb-3">Sale checkpoints.</p>
+              <div className="space-y-2">
+                {flowSteps.map((step) => (
+                  <button key={step.id} onClick={() => setActiveTab(step.id)} className="w-full flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${step.status === 'in-progress' ? 'bg-blue-500' : step.status === 'complete' ? 'bg-green-500' : 'bg-gray-200'}`}>
+                      {step.status === 'in-progress' && <Icon name="circle" size={8} className="text-white" />}
+                      {step.status === 'complete' && <Icon name="check" size={12} className="text-white" />}
+                    </div>
+                    <span className="text-sm flex-1 text-left">{step.label}</span>
+                    <Badge variant={step.status === 'in-progress' ? 'primary' : step.status === 'complete' ? 'success' : 'default'} size="sm">
+                      {step.status === 'in-progress' ? 'In progress' : step.status === 'complete' ? 'Done' : 'Todo'}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+            </Card>
+
+            {/* Customer Activity */}
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium">Customer Activity</h4>
+                <Icon name="activity" size={16} className="text-gray-400" />
+              </div>
+              <div className="space-y-3">
+                {customerActivity.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm">{item.action}</p>
+                      <p className="text-xs text-gray-400">{item.time}</p>
+                    </div>
+                    <Badge size="sm">Customer</Badge>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </aside>
+
+          {/* Main content */}
+          <main className="flex-1 p-6 bg-gray-50 overflow-y-auto">
+            <Card className="p-0">
+              <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+              <div className="p-6">{renderTabContent()}</div>
+            </Card>
+          </main>
+        </div>
+      );
+    };
+
+    // ============ MAIN APP ============
+    function App() {
+      const [demoMode, setDemoMode] = useState('mtb');
+      const [answers, setAnswers] = useState({});
+      const [selectedBike, setSelectedBike] = useState(null);
+      const [selectedAccessories, setSelectedAccessories] = useState([]);
+
+      useEffect(() => {
+        if (demoMode && demoScenarios[demoMode]) {
+          setAnswers(demoScenarios[demoMode].answers);
+          setSelectedBike(null);
+          setSelectedAccessories([]);
+        } else {
+          setAnswers({});
+          setSelectedBike(null);
+          setSelectedAccessories([]);
+        }
+      }, [demoMode]);
+
+      return (
+        <div className="min-h-screen flex flex-col bg-gray-100">
+          <Header />
+          <ProgressBar progress={selectedBike ? 75 : Object.keys(answers).length * 12} className="mx-0" />
+          <DealWorkspace
+            demoMode={demoMode}
+            answers={answers}
+            setAnswers={setAnswers}
+            selectedBike={selectedBike}
+            setSelectedBike={setSelectedBike}
+            selectedAccessories={selectedAccessories}
+            setSelectedAccessories={setSelectedAccessories}
+          />
+          <DemoSelector onSelect={setDemoMode} currentDemo={demoMode} />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
